@@ -254,8 +254,11 @@ Text documents are often broken up into several sections and subsections. Each s
     </form>
         <h4>Anchor tag</h4>
         Please
-        <a href="https://www.lipsum.com" id="wd-github">click here</a>
+        <a href="https://www.lipsum.com" id="wd-lipsum">click here</a>
         to get dummy text<br/>
+        <a href="https://github.com/Hudica" id="wd-github">
+        my Github
+        </a>
 
     </div>
     </div>
