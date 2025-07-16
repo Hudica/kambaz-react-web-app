@@ -3,6 +3,7 @@ import Profile from "./Profile"
 import Signup from "./Signup";
 import { Routes, Route, Navigate } from "react-router";
 import AccountNavigation from "./Navigation";
+
 export default function Account() {
   return (
     <div id="wd-account-screen">
@@ -11,7 +12,7 @@ export default function Account() {
           <td valign="top">
             <AccountNavigation />
           </td>
-          <td valign="top">
+          <td valign="top" style={{ paddingLeft: '40px' }}>
             <Routes>
               <Route path="/"        element={<Navigate to="/Kambaz/Account/Signin" />} />
               <Route path="/Signin"  element={<Signin />} />
@@ -22,6 +23,5 @@ export default function Account() {
         </tr>
       </table>
     </div>
-);}
-
-
+  );
+}
