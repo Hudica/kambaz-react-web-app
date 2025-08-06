@@ -1,23 +1,29 @@
+import { ListGroup, Button, Form } from "react-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 import { addTodo, updateTodo, setTodo } from "./todosReducer";
-import { Button, FormControl, ListGroup } from "react-bootstrap";
 
 export default function TodoForm() {
   const { todo } = useSelector((state: any) => state.todosReducer);
   const dispatch = useDispatch();
   return (
-    <ListGroup.Item className="d-flex gap-2">
-      <FormControl
-        value={todo.title}
-        onChange={(e) => dispatch(setTodo({ ...todo, title: e.target.value }))}
-        className="flex-grow-1"
-      />
-      <Button onClick={() => dispatch(updateTodo(todo))}
-              id="wd-update-todo-click"
-              variant="warning"> Update </Button>
+    <ListGroup.Item>
       <Button onClick={() => dispatch(addTodo(todo))}
-              id="wd-add-todo-click"
-              variant="success"> Add </Button>
+              id="wd-add-todo-click"> Add </Button>
+      <Button onClick={() => dispatch(updateTodo(todo))}
+              id="wd-update-todo-click"> Update </Button>
+      <Form.Control
+        value={todo.title}
+        onChange={(e: any) => dispatch(setTodo({ ...todo, title: e.target.value }))}/>
     </ListGroup.Item>
   );
 }
+
+// breaks out todo form
+// todo to be added or edited
+// event handler to update todo's title
+// event handler to add new todo
+// event handler to update todo
+// invoke add new todo
+// invoke update todo
+// input field to update todo's title
+// update title on each key stroke 

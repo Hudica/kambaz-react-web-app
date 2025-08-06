@@ -1,29 +1,27 @@
-import { Link, useParams, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { ListGroup } from "react-bootstrap";
+// TODO(A2): Can I use location.pathname.includes to check if the current path is active?
 
-export default function CourseNavigation() {
-  const { cid } = useParams();
-  const { pathname } = useLocation();
+interface CourseNavigationProps {
+  courseId?: string;
+}
+
+export default function CourseNavigation({ courseId }: CourseNavigationProps) {
   const links = ["Home", "Modules", "Piazza", "Zoom", "Assignments", "Quizzes", "Grades", "People"];
-  
+
   return (
-    <div id="wd-courses-navigation" className="wd list-group fs-5 rounded-0">
-      {links.map((link) => {
-        const linkPath = `/Kambaz/Courses/${cid}/${link}`;
-        const isActive = pathname.includes(link);
-        
-        return (
-          <Link 
-            key={link}
-            to={linkPath}
-            id={`wd-course-${link.toLowerCase()}-link`}
-            className={`list-group-item border border-0 ${
-              isActive ? "active" : "text-danger"
-            }`}
-          >
-            {link}
-          </Link>
-        );
-      })}
-    </div>
+    <ListGroup id="wd-courses-navigation" className="wd list-group fs-5 rounded-0">
+      {links.map((link) => (
+        <ListGroup.Item
+          key={link}
+          as={Link}
+          to={`/Kambaz/Courses/${courseId}/${link}`}
+          id={`wd-course-${link.toLowerCase()}-link`}
+          className={`border-0 ${location.pathname.includes(`/${link}`) ? "active" : "text-danger"}`}
+        >
+          {link}
+        </ListGroup.Item>
+      ))}
+    </ListGroup>
   );
 }

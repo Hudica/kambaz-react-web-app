@@ -1,117 +1,310 @@
-import { FaSearch, FaPlus, FaCaretDown, FaCheckCircle, FaTrash } from "react-icons/fa";
-import { BsGripVertical } from "react-icons/bs";
-import { IoDocumentText } from "react-icons/io5";
+import { FaSearch, FaPlus, FaCheckCircle, FaTrash } from "react-icons/fa";
+import { FaPencil } from "react-icons/fa6";
+import { MdDragIndicator } from "react-icons/md";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { AiOutlineFileText } from "react-icons/ai";
+import { Button, InputGroup, FormControl, Card } from "react-bootstrap";
 import { useParams, Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { deleteAssignment } from "./reducer";
+import { useEffect } from "react";
+import { setAssignments, deleteAssignment } from "./reducer";
+import * as assignmentsClient from "./client";
+
+const quizData = [
+  { title: "Q1 - HTML" },
+  { title: "Q2 - CSS" },
+  { title: "Q3 - JS, ES6" },
+  { title: "Q4 - NODE" },
+  { title: "A5 - MONGO" },
+];
+const examData = [
+  { title: "Midterm" },
+  { title: "Final" },
+];
+const projectData = [
+  { title: "Project" },
+];
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const months = ["January", "February", "March", "April", "May", "June", 
+                 "July", "August", "September", "October", "November", "December"];
+  
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  const formattedHours = hours % 12 || 12;
+  const formattedMinutes = minutes.toString().padStart(2, '0');
+  
+  return `${month} ${day} at ${formattedHours}:${formattedMinutes}${ampm}`;
+}
+
+interface Assignment {
+  _id: string;
+  title: string;
+  course: string;
+  module: string;
+  available: string;
+  due: string;
+  points: number;
+}
 
 export default function Assignments() {
   const { cid } = useParams();
-  const dispatch = useDispatch();
-  const { currentUser } = useSelector((state: any) => state.accountReducer);
   const { assignments } = useSelector((state: any) => state.assignmentsReducer);
-  
-  const courseAssignments = assignments.filter(
-    (assignment: any) => assignment.course === cid
-  );
-  const isFaculty = currentUser?.role === "FACULTY";
+  const { currentUser } = useSelector((state: any) => state.accountReducer);
+  const dispatch = useDispatch();
 
-  const handleDeleteAssignment = (assignmentId: string, assignmentTitle: string) => {
-    if (window.confirm(`Are you sure you want to remove the assignment "${assignmentTitle}"?`)) {
-      dispatch(deleteAssignment(assignmentId));
+  const fetchAssignments = async () => {
+    try {
+      const assignments = await assignmentsClient.findAssignmentsForCourse(cid as string);
+      dispatch(setAssignments(assignments));
+    } catch (error) {
+      console.error("Failed to fetch assignments:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAssignments();
+  }, [cid]);
+
+  console.log("Assignments component rendered");
+  console.log("Course ID:", cid);
+  console.log("All assignments:", assignments);
+  console.log("Current user:", currentUser);
+  console.log("Current user role:", currentUser?.role);
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    console.log("handleDeleteAssignment called with:", assignmentId);
+    const result = window.confirm("Are you sure you want to remove this assignment?");
+    console.log("User confirmed:", result);
+    if (result) {
+      try {
+        await assignmentsClient.deleteAssignment(assignmentId);
+        dispatch(deleteAssignment(assignmentId));
+        console.log("Assignment deleted successfully");
+      } catch (error) {
+        console.error("Failed to delete assignment:", error);
+      }
     }
   };
 
   return (
-    <div id="wd-assignments" className="container-fluid px-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div className="input-group" style={{ width: "300px" }}>
-          <span className="input-group-text bg-white">
-            <FaSearch />
-          </span>
-          <input
-            type="text"
-            className="form-control border-start-0"
+    <div id="wd-assignments" className="p-3" style={{ background: "#f5f5f5", minHeight: "100vh", marginBottom: 0 }}>
+      {/* Top bar: Search + Buttons */}
+      <div className="d-flex align-items-center mb-3">
+        <InputGroup style={{ maxWidth: 300 }}>
+          <InputGroup.Text className="bg-white border-end-0">
+            <FaSearch className="text-secondary" />
+          </InputGroup.Text>
+          <FormControl
             placeholder="Search..."
-            id="wd-search-assignment"
+            className="border-start-0"
+            style={{ background: "#fff" }}
           />
-        </div>
-        
-        {isFaculty && (
-          <div>
-            <button className="btn btn-secondary me-2" id="wd-add-assignment-group">
-              <FaPlus className="me-1" /> Group
-            </button>
-            <Link to={`/Kambaz/Courses/${cid}/Assignments/new`} className="btn btn-danger" id="wd-add-assignment">
-              <FaPlus className="me-1" /> Assignment
+        </InputGroup>
+        <div className="ms-auto d-flex gap-2">
+          <Button variant="outline-secondary" className="fw-bold d-flex align-items-center">
+            <FaPlus className="me-1" /> Group
+          </Button>
+          {(currentUser?.role === "FACULTY" || currentUser?.role === "TA") && (
+            <Link to={`/Kambaz/Courses/${cid}/Assignments/new`}>
+              <Button variant="danger" className="fw-bold d-flex align-items-center">
+                <FaPlus className="me-1" /> Assignment
+              </Button>
             </Link>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="border rounded p-0">
-        <div className="d-flex justify-content-between align-items-center p-3 bg-light border-bottom">
-          <h5 className="mb-0 d-flex align-items-center">
-            <BsGripVertical className="ms-2 fs-4"/>
-            <FaCaretDown className="me-2" />
-            <strong>ASSIGNMENTS</strong>
-          </h5>
+      {/* Assignments Header */}
+      <Card className="mb-0 rounded-0 rounded-top">
+        <Card.Body className="p-2 pb-0">
           <div className="d-flex align-items-center">
-            <span className="me-3 text-muted">40% of Total</span>
-            {isFaculty && (
-              <Link to={`/Kambaz/Courses/${cid}/Assignments/new`} className="btn btn-outline-secondary btn-sm">
+            <MdDragIndicator className="me-2 text-secondary" />
+            <span className="fw-bold">ASSIGNMENTS</span>
+            <span className="ms-2 text-secondary">40% of Total</span>
+            <div className="ms-auto d-flex align-items-center gap-2">
+              <Button variant="light" size="sm" className="d-flex align-items-center p-1 border-0 bg-transparent shadow-none">
                 <FaPlus />
-              </Link>
-            )}
-            <BsGripVertical className="ms-3 fs-5" />
+              </Button>
+              <Button variant="light" size="sm" className="p-1">
+                <BsThreeDotsVertical />
+              </Button>
+            </div>
           </div>
-        </div>
+        </Card.Body>
+      </Card>
 
-        <ul className="list-unstyled mb-0">
-          {courseAssignments.map((assignment: any) => (
-            <li key={assignment._id} className="wd-assignment-list-item border-bottom">
-              <div className="d-flex align-items-start p-3 border-start border-5 border-success">
-                <div className="me-3">
-                  <BsGripVertical className="text-muted" />
-                  <IoDocumentText className="ms-2 text-success fs-5" />
-                </div>
-                
-                <div className="flex-grow-1">
-                  {isFaculty ? (
-                    <Link to={`/Kambaz/Courses/${cid}/Assignments/${assignment._id}`}
-                          className="wd-assignment-link text-decoration-none text-dark">
-                      <strong>{assignment.title}</strong>
-                    </Link>
-                  ) : (
-                    <strong>{assignment.title}</strong>
-                  )}
-                  <div className="small text-muted">
-                    <span className="text-danger">Multiple Modules</span> | 
-                    {assignment.availableFrom && ` Not available until ${assignment.availableFrom} |`}
-                    <br />
-                    <strong>Due</strong> {assignment.due || "No due date"} | {assignment.points} pts
-                  </div>
-                </div>
-                
-                <div className="d-flex align-items-center">
-                  <FaCheckCircle className="text-success fs-5 me-3" />
-                  {isFaculty && (
-                    <FaTrash 
-                      className="text-danger me-3" 
-                      style={{ cursor: "pointer" }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleDeleteAssignment(assignment._id, assignment.title);
-                      }}
-                      title="Delete Assignment"
-                    />
-                  )}
-                  <BsGripVertical className="text-muted" />
-                </div>
+      {/* Assignment List */}
+      <div className="bg-white border-top-0 rounded-0" style={{ borderTop: "none" }}>
+        {assignments.map((assignment: Assignment) => (
+          <div
+            key={assignment._id}
+            className="d-flex align-items-center p-3 border-bottom"
+            style={{ borderLeft: "4px solid #198754" }}
+          >
+            <MdDragIndicator className="me-3 text-secondary" />
+            <AiOutlineFileText className="me-3 text-success fs-4" />
+            <div className="flex-grow-1">
+              <Link 
+                to={`/Kambaz/Courses/${cid}/Assignments/${assignment._id}`}
+                className="fw-bold fs-5 mb-1 text-decoration-none text-dark"
+              >
+                {assignment.title}
+              </Link>
+              <div className="text-primary" style={{ fontSize: "0.95em" }}>
+                {assignment.module} <span className="text-secondary">| {formatDate(assignment.available)}</span>
               </div>
-            </li>
-          ))}
-        </ul>
+              <div className="text-secondary" style={{ fontSize: "0.95em" }}>
+                <span className="fw-bold">Due</span> {formatDate(assignment.due)} | {assignment.points} pts
+              </div>
+            </div>
+            
+            {/* Control Buttons */}
+            {(currentUser?.role === "FACULTY" || currentUser?.role === "TA") && (
+              <div className="float-end d-flex align-items-center">
+                <Link to={`/Kambaz/Courses/${cid}/Assignments/${assignment._id}`} className="text-decoration-none">
+                  <FaPencil className="text-primary me-3" style={{ cursor: "pointer" }} />
+                </Link>
+                <FaTrash 
+                  className="text-danger me-3" 
+                  style={{ cursor: "pointer" }}
+                  onClick={(e) => {
+                    console.log("Trash icon clicked!");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDeleteAssignment(assignment._id);
+                  }}
+                />
+              </div>
+            )}
+            
+            <FaCheckCircle className="text-success fs-4 ms-2" />
+            <Button variant="light" size="sm" className="ms-2 p-1">
+              <BsThreeDotsVertical />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* Quizzes Section */}
+      <Card className="mb-0 mt-4 rounded-0 rounded-top">
+        <Card.Body className="p-2 pb-0">
+          <div className="d-flex align-items-center">
+            <MdDragIndicator className="me-2 text-secondary" />
+            <span className="fw-bold">QUIZZES</span>
+            <span className="ms-2 text-secondary">10% of Total</span>
+            <div className="ms-auto d-flex align-items-center gap-2">
+              <Button variant="light" size="sm" className="d-flex align-items-center p-1 border-0 bg-transparent shadow-none">
+                <FaPlus />
+              </Button>
+              <Button variant="light" size="sm" className="p-1">
+                <BsThreeDotsVertical />
+              </Button>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+      <div className="bg-white border-top-0 rounded-0" style={{ borderTop: "none" }}>
+        {quizData.map((quiz) => (
+          <div
+            key={quiz.title}
+            className="d-flex align-items-center p-3 border-bottom"
+            style={{ borderLeft: "4px solid #198754" }}
+          >
+            <MdDragIndicator className="me-3 text-secondary" />
+            <AiOutlineFileText className="me-3 text-success fs-4" />
+            <div className="flex-grow-1">
+              <span className="fw-bold fs-5 mb-1">{quiz.title}</span>
+              <div className="text-primary" style={{ fontSize: "0.95em" }}>Multiple Modules <span className="text-secondary">| Not Available Yet</span></div>
+            </div>
+            <FaCheckCircle className="text-success fs-4 ms-2" />
+            <Button variant="light" size="sm" className="ms-2 p-1">
+              <BsThreeDotsVertical />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* Exams Section */}
+      <Card className="mb-0 mt-4 rounded-0 rounded-top">
+        <Card.Body className="p-2 pb-0">
+          <div className="d-flex align-items-center">
+            <MdDragIndicator className="me-2 text-secondary" />
+            <span className="fw-bold">EXAMS</span>
+            <span className="ms-2 text-secondary">20% of Total</span>
+            <div className="ms-auto d-flex align-items-center gap-2">
+              <Button variant="light" size="sm" className="d-flex align-items-center p-1 border-0 bg-transparent shadow-none">
+                <FaPlus />
+              </Button>
+              <Button variant="light" size="sm" className="p-1">
+                <BsThreeDotsVertical />
+              </Button>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+      <div className="bg-white border-top-0 rounded-0" style={{ borderTop: "none" }}>
+        {examData.map((exam) => (
+          <div
+            key={exam.title}
+            className="d-flex align-items-center p-3 border-bottom"
+            style={{ borderLeft: "4px solid #198754" }}
+          >
+            <MdDragIndicator className="me-3 text-secondary" />
+            <AiOutlineFileText className="me-3 text-success fs-4" />
+            <div className="flex-grow-1">
+              <span className="fw-bold fs-5 mb-1">{exam.title}</span>
+              <div className="text-primary" style={{ fontSize: "0.95em" }}>Multiple Modules <span className="text-secondary">| Not Available Yet</span></div>
+            </div>
+            <FaCheckCircle className="text-success fs-4 ms-2" />
+            <Button variant="light" size="sm" className="ms-2 p-1">
+              <BsThreeDotsVertical />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* Project Section */}
+      <Card className="mb-0 mt-4 rounded-0 rounded-top">
+        <Card.Body className="p-2 pb-0">
+          <div className="d-flex align-items-center">
+            <MdDragIndicator className="me-2 text-secondary" />
+            <span className="fw-bold">PROJECT</span>
+            <span className="ms-2 text-secondary">30% of Total</span>
+            <div className="ms-auto d-flex align-items-center gap-2">
+              <Button variant="light" size="sm" className="d-flex align-items-center p-1 border-0 bg-transparent shadow-none">
+                <FaPlus />
+              </Button>
+              <Button variant="light" size="sm" className="p-1">
+                <BsThreeDotsVertical />
+              </Button>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+      <div className="bg-white border-top-0 rounded-0" style={{ borderTop: "none" }}>
+        {projectData.map((project) => (
+          <div
+            key={project.title}
+            className="d-flex align-items-center p-3 border-bottom"
+            style={{ borderLeft: "4px solid #198754" }}
+          >
+            <MdDragIndicator className="me-3 text-secondary" />
+            <AiOutlineFileText className="me-3 text-success fs-4" />
+            <div className="flex-grow-1">
+              <span className="fw-bold fs-5 mb-1">{project.title}</span>
+              <div className="text-primary" style={{ fontSize: "0.95em" }}>Multiple Modules <span className="text-secondary">| Not Available Yet</span></div>
+            </div>
+            <FaCheckCircle className="text-success fs-4 ms-2" />
+            <Button variant="light" size="sm" className="ms-2 p-1">
+              <BsThreeDotsVertical />
+            </Button>
+          </div>
+        ))}
       </div>
     </div>
   );

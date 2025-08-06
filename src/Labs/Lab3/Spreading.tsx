@@ -14,4 +14,5 @@ export default function Spreading() {
      { JSON.stringify(obj1) }         <br />
      { JSON.stringify(obj2) }         <br />
      { JSON.stringify(obj3) }         <br />  <hr />
-   </div>);}
+   </div>);
+} 

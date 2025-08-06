@@ -8,5 +8,6 @@ const TodoItem = ( { todo = { done: true, title: 'Buy milk',
             defaultChecked={todo.done}/>
      {todo.title} ({todo.status})
    </ListGroup.Item>
- );}
-export default TodoItem;
+ );
+}
+export default TodoItem; 

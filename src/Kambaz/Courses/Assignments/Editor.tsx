@@ -1,64 +1,71 @@
-import { Form, Container, Row, Col } from "react-bootstrap";
+import { Form, Button, Row, Col, Card } from "react-bootstrap";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { useEffect, useState } from "react";
 import { addAssignment, updateAssignment } from "./reducer";
+import { useState, useEffect } from "react";
+import * as assignmentsClient from "./client";
+
+interface Assignment {
+  _id: string;
+  title: string;
+  course: string;
+  module: string;
+  available: string;
+  due: string;
+  points: number;
+  description?: string;
+}
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { currentUser } = useSelector((state: any) => state.accountReducer);
   const { assignments } = useSelector((state: any) => state.assignmentsReducer);
-  const isFaculty = currentUser?.role === "FACULTY";
-  
-  const isNewAssignment = aid === "new";
-  const existingAssignment = assignments.find(
-    (assignment: any) => assignment._id === aid
-  );
 
-  // Initialize form state
-  const [assignment, setAssignment] = useState({
-    title: "",
-    description: "",
+  const isNew = aid === "new";
+  const existingAssignment = assignments.find((a: Assignment) => a._id === aid);
+
+  const [assignment, setAssignment] = useState<Assignment>({
+    _id: "",
+    title: "New Assignment",
+    course: cid || "",
+    module: "Module",
+    available: "2024-05-06T00:00",
+    due: "2024-05-13T23:59",
     points: 100,
-    due: "",
-    availableFrom: "",
-    availableUntil: "",
-    course: cid,
+    description: "New Assignment Description"
   });
 
-  // Load existing assignment data if editing
   useEffect(() => {
-    if (!isNewAssignment && existingAssignment) {
-      setAssignment({
-        ...existingAssignment,
-        due: existingAssignment.due || "",
-        availableFrom: existingAssignment.availableFrom || "",
-        availableUntil: existingAssignment.availableUntil || "",
-      });
+    if (!isNew && existingAssignment) {
+      setAssignment(existingAssignment);
+    } else if (!isNew && aid) {
+      // If assignment not in store, fetch it from server
+      const fetchAssignment = async () => {
+        try {
+          const fetchedAssignment = await assignmentsClient.findAssignmentById(aid);
+          setAssignment(fetchedAssignment);
+        } catch (error) {
+          console.error("Failed to fetch assignment:", error);
+        }
+      };
+      fetchAssignment();
     }
-  }, [isNewAssignment, existingAssignment]);
+  }, [isNew, existingAssignment, aid]);
 
-  // Redirect non-faculty users
-  useEffect(() => {
-    if (!isFaculty) {
+  const handleSave = async () => {
+    try {
+      if (isNew) {
+        const newAssignment = await assignmentsClient.createAssignment(cid as string, assignment);
+        dispatch(addAssignment(newAssignment));
+      } else {
+        const updatedAssignment = await assignmentsClient.updateAssignment(assignment);
+        dispatch(updateAssignment(updatedAssignment));
+      }
       navigate(`/Kambaz/Courses/${cid}/Assignments`);
+    } catch (error) {
+      console.error("Failed to save assignment:", error);
     }
-  }, [isFaculty, navigate, cid]);
-
-  // Don't render anything for non-faculty
-  if (!isFaculty) {
-    return null;
-  }
-
-  const handleSave = () => {
-    if (isNewAssignment) {
-      dispatch(addAssignment(assignment));
-    } else {
-      dispatch(updateAssignment({ ...assignment, _id: aid }));
-    }
-    navigate(`/Kambaz/Courses/${cid}/Assignments`);
   };
 
   const handleCancel = () => {
@@ -66,109 +73,119 @@ export default function AssignmentEditor() {
   };
 
   return (
-    <Container className="mt-3" id="wd-assignments-editor" style={{ maxWidth: "800px" }}>
-      <h2>{isNewAssignment ? "Create Assignment" : "Edit Assignment"}</h2>
-      <hr />
-      
-      <Form>
-        <Form.Group className="mb-3">
-          <Form.Label htmlFor="wd-name">Assignment Name</Form.Label>
-          <Form.Control 
-            id="wd-name" 
-            type="text"
-            value={assignment.title}
-            onChange={(e) => setAssignment({ ...assignment, title: e.target.value })}
-            placeholder="New Assignment"
-          />
-        </Form.Group>
+    <Form id="wd-assignments-editor" className="p-4" style={{ maxWidth: 500, margin: "0 auto" }}>
+      <Form.Group className="mb-3" controlId="wd-name">
+        <Form.Label>Assignment Name</Form.Label>
+        <Form.Control 
+          type="text" 
+          value={assignment.title}
+          onChange={(e) => setAssignment({ ...assignment, title: e.target.value })}
+        />
+      </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Control 
-            id="wd-description"
-            as="textarea"
-            rows={8}
-            value={assignment.description}
-            onChange={(e) => setAssignment({ ...assignment, description: e.target.value })}
-            placeholder="New Assignment Description"
-          />
-        </Form.Group>
-
-        <Form.Group as={Row} className="mb-3">
-          <Form.Label column sm={2} className="text-end">Points</Form.Label>
-          <Col sm={10}>
-            <Form.Control 
-              id="wd-points" 
-              type="number"
-              value={assignment.points}
-              onChange={(e) => setAssignment({ ...assignment, points: parseInt(e.target.value) || 0 })}
-              style={{ width: "150px" }}
+      <Card className="mb-3">
+        <Card.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>Description</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={assignment.description}
+              onChange={(e) => setAssignment({ ...assignment, description: e.target.value })}
             />
-          </Col>
-        </Form.Group>
+          </Form.Group>
+        </Card.Body>
+      </Card>
 
-        <Form.Group as={Row} className="mb-3">
-          <Form.Label column sm={2} className="text-end">
-            Assign
-          </Form.Label>
-          <Col sm={10}>
-            <div className="border rounded p-3">
-              <Form.Group className="mb-3">
-                <Form.Label htmlFor="wd-due-date">Due</Form.Label>
+      {/* Points */}
+      <Form.Group as={Row} className="mb-3" controlId="wd-points">
+        <Form.Label column md={4} className="text-md-end">Points</Form.Label>
+        <Col md={8}>
+          <Form.Control 
+            type="number" 
+            value={assignment.points}
+            onChange={(e) => setAssignment({ ...assignment, points: parseInt(e.target.value) })}
+          />
+        </Col>
+      </Form.Group>
+
+      {/* Assignment Group */}
+      <Form.Group as={Row} className="mb-3" controlId="wd-group">
+        <Form.Label column md={4} className="text-md-end">Assignment Group</Form.Label>
+        <Col md={8}>
+          <Form.Select>
+            <option>ASSIGNMENTS</option>
+          </Form.Select>
+        </Col>
+      </Form.Group>
+
+      {/* Display Grade as */}
+      <Form.Group as={Row} className="mb-3" controlId="wd-display-grade">
+        <Form.Label column md={4} className="text-md-end">Display Grade as</Form.Label>
+        <Col md={8}>
+          <Form.Select>
+            <option>Percentage</option>
+          </Form.Select>
+        </Col>
+      </Form.Group>
+
+      {/* Submission Type + Online Entry Options */}
+      <Form.Group as={Row} className="mb-3" controlId="wd-submission-type">
+        <Form.Label column md={4} className="text-md-end">Submission Type</Form.Label>
+        <Col md={8}>
+          <Form.Select className="mb-2">
+            <option>Online</option>
+          </Form.Select>
+          <div className="border rounded p-2 bg-light">
+            <div className="fw-bold mb-1">Online Entry Options</div>
+            <Form.Check type="checkbox" label="Text Entry" />
+            <Form.Check type="checkbox" label="Website URL" defaultChecked />
+            <Form.Check type="checkbox" label="Media Recordings" />
+            <Form.Check type="checkbox" label="Student Annotation" />
+            <Form.Check type="checkbox" label="File Uploads" />
+          </div>
+        </Col>
+      </Form.Group>
+
+      {/* Assign label left, Card right */}
+      <Row className="mb-3 align-items-start">
+        <Col md={4} className="text-md-end pt-2 fw-bold">Assign</Col>
+        <Col md={8}>
+          <Card>
+            <Card.Body>
+              <Form.Group className="mb-2" controlId="wd-assign-to">
+                <Form.Label className="mb-1">Assign to</Form.Label>
+                <Form.Control type="text" value="Everyone" />
+              </Form.Group>
+              <Form.Group className="mb-2" controlId="wd-due">
+                <Form.Label className="mb-1">Due</Form.Label>
                 <Form.Control 
-                  type="date"
-                  id="wd-due-date"
+                  type="datetime-local" 
                   value={assignment.due}
                   onChange={(e) => setAssignment({ ...assignment, due: e.target.value })}
                 />
               </Form.Group>
+              <Form.Group className="mb-2" controlId="wd-available-from">
+                <Form.Label className="mb-1">Available from</Form.Label>
+                <Form.Control 
+                  type="datetime-local" 
+                  value={assignment.available}
+                  onChange={(e) => setAssignment({ ...assignment, available: e.target.value })}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2" controlId="wd-until">
+                <Form.Label className="mb-1">Until</Form.Label>
+                <Form.Control type="datetime-local" />
+              </Form.Group>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-              <Row>
-                <Col sm={6}>
-                  <Form.Group>
-                    <Form.Label htmlFor="wd-available-from">Available from</Form.Label>
-                    <Form.Control 
-                      type="date"
-                      id="wd-available-from"
-                      value={assignment.availableFrom}
-                      onChange={(e) => setAssignment({ ...assignment, availableFrom: e.target.value })}
-                    />
-                  </Form.Group>
-                </Col>
-                <Col sm={6}>
-                  <Form.Group>
-                    <Form.Label htmlFor="wd-available-until">Until</Form.Label>
-                    <Form.Control 
-                      type="date"
-                      id="wd-available-until"
-                      value={assignment.availableUntil}
-                      onChange={(e) => setAssignment({ ...assignment, availableUntil: e.target.value })}
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-            </div>
-          </Col>
-        </Form.Group>
-
-        <hr />
-
-        <div className="text-end">
-          <button 
-            type="button"
-            className="btn btn-light me-2 border" 
-            onClick={handleCancel}
-          >
-            Cancel
-          </button>
-          <button 
-            type="button"
-            className="btn btn-danger" 
-            onClick={handleSave}
-          >
-            Save
-          </button>
-        </div>
-      </Form>
-    </Container>
+      <div className="d-flex justify-content-end gap-2 mt-4">
+        <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
+        <Button variant="danger" onClick={handleSave}>Save</Button>
+      </div>
+    </Form>
   );
 }

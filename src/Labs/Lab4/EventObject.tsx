@@ -8,7 +8,7 @@ export default function EventObject() {
   };
   return (
     <div>
-       <h2>Event Object</h2>
+      <h2>Event Object</h2>
       <button onClick={(e) => handleClick(e)}
         className="btn btn-primary"
         id="wd-display-event-obj-click">
@@ -17,4 +17,5 @@ export default function EventObject() {
       <pre>{JSON.stringify(event, null, 2)}</pre>
       <hr/>
     </div>
-);}
+  );
+} 

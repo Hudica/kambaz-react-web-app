@@ -1,35 +1,83 @@
-import { Link, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { Button } from "react-bootstrap";
 
 export default function AccountNavigation() {
   const { currentUser } = useSelector((state: any) => state.accountReducer);
-  const links = currentUser ? ["Profile"] : ["Signin", "Signup"];
-  const { pathname } = useLocation();
-  
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  const navigateTo = (path: string) => {
+    navigate(path);
+  };
+
   return (
-    <div id="wd-account-navigation" className="list-group fs-5 rounded-0">
-      {links.map((link) => (
-        <Link 
-          key={link}
-          to={`/Kambaz/Account/${link}`} 
-          className="list-group-item border border-0 d-flex align-items-center"
-          style={{
-            color: pathname.includes(link) ? 'black' : '#dc3545',
-            textDecoration: 'none'
-          }}
-        >
-          {pathname.includes(link) && (
-            <span style={{
-              width: '4px',
-              height: '25px',
-              backgroundColor: 'black',
-              marginRight: '10px',
-              display: 'inline-block'
-            }}></span>
-          )}
-          {link}
-        </Link>
-      ))}
+    <div id="wd-account-navigation">
+      {!currentUser && (
+        <div className="d-flex flex-column gap-2">
+          <div className="d-flex align-items-center">
+            {isActive("/Kambaz/Account/Signin") && (
+              <div 
+                className="bg-primary me-2" 
+                style={{ width: "4px", height: "24px" }}
+              />
+            )}
+            <Button
+              variant="link"
+              className={`text-start p-0 text-decoration-none ${
+                isActive("/Kambaz/Account/Signin") ? "text-primary fw-bold" : "text-primary"
+              }`}
+              onClick={() => navigateTo("/Kambaz/Account/Signin")}
+            >
+              Sign in
+            </Button>
+          </div>
+
+          <div className="d-flex align-items-center">
+            {isActive("/Kambaz/Account/Signup") && (
+              <div 
+                className="bg-primary me-2" 
+                style={{ width: "4px", height: "24px" }}
+              />
+            )}
+            <Button
+              variant="link"
+              className={`text-start p-0 text-decoration-none ${
+                isActive("/Kambaz/Account/Signup") ? "text-primary fw-bold" : "text-primary"
+              }`}
+              onClick={() => navigateTo("/Kambaz/Account/Signup")}
+            >
+              Sign up
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {currentUser && (
+        <div className="d-flex flex-column gap-2">
+          <div className="d-flex align-items-center">
+            {isActive("/Kambaz/Account/Profile") && (
+              <div 
+                className="bg-primary me-2" 
+                style={{ width: "4px", height: "24px" }}
+              />
+            )}
+            <Button
+              variant="link"
+              className={`text-start p-0 text-decoration-none ${
+                isActive("/Kambaz/Account/Profile") ? "text-primary fw-bold" : "text-secondary"
+              }`}
+              onClick={() => navigateTo("/Kambaz/Account/Profile")}
+            >
+              Profile
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

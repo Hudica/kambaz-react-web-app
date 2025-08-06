@@ -6,7 +6,6 @@ export default function House() {
       street: "Via Roma", city: "Roma", state: "RM", zip: "00100",  country: "Italy", },
     owners: ["Alice", "Bob"],
   };
-   console.log(house);
   return (
     <div id="wd-house">
       <h4>House</h4>
@@ -16,4 +15,5 @@ export default function House() {
       <pre>{JSON.stringify(house, null, 2)}</pre>
       <hr />
     </div>
-);}
+  );
+} 

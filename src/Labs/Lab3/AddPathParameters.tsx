@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+
 export default function AddPathParameters() {
   const { a, b } = useParams();
   return (
@@ -6,4 +7,4 @@ export default function AddPathParameters() {
       {a} + {b} = {parseInt(a as string) + parseInt(b as string)}
     </div>
   );
-}
+} 
