@@ -1,4 +1,5 @@
 import axios from "axios";
+const axiosWithCredentials = axios.create({ withCredentials: true });
 
 const REMOTE_SERVER = import.meta.env.VITE_REMOTE_SERVER;
 const USERS_API = `${REMOTE_SERVER}/api/users`;
@@ -9,6 +10,12 @@ export const findAllUsers = async () => {
   const response = await axios.get(USERS_API);
   return response.data;
 };
+
+export const fetchAllCourses = async () => {
+ const { data } = await axiosWithCredentials.get(COURSES_API);
+ return data;
+};
+
 
 // Get users enrolled in a specific course
 export const findUsersForCourse = async (courseId: string) => {
@@ -30,7 +37,7 @@ export const createUser = async (user: any) => {
 
 // Update an existing user
 export const updateUser = async (userId: string, user: any) => {
-  const response = await axios.put(`${USERS_API}/${userId}`, user);
+  const response = await axiosWithCredentials.put(`${USERS_API}/${userId}`, user);
   return response.data;
 };
 

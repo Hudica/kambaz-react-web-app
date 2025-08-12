@@ -5,10 +5,10 @@ import CourseNavigation from "./Navigation";
 import { Route, Routes, useParams, useLocation } from "react-router";
 import Modules from "./Modules";
 import Home from "./Home";
+import People from "./People"
 import { FaAlignJustify } from "react-icons/fa6";
 import { Button, Offcanvas, ListGroup } from "react-bootstrap";
 import { useState } from "react";
-import PeopleTable from "./People/Table";
 import { AiOutlineDashboard, AiOutlineCalendar, AiOutlineInbox } from "react-icons/ai";
 import { LiaBookSolid } from "react-icons/lia";
 import { FaRegCircleUser } from "react-icons/fa6";
@@ -59,7 +59,7 @@ export default function Courses() {
             <Route path="Modules" element={<Modules />} />
             <Route path="Assignments" element={<Assignments />} />
             <Route path="Assignments/:aid" element={<AssignmentEditor />} />
-            <Route path="People" element={<PeopleTable />} />
+            <Route path="People" element={<People />} />
           </Routes>
         </div>
       </div>

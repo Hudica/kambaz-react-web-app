@@ -1,11 +1,12 @@
+// This is the PeopleTable that would be used in Account/Users
+// Location: src/Kambaz/Account/PeopleTable.tsx
+
 import { useState } from "react";
 import { Table, Button, Modal, Form, Row, Col } from "react-bootstrap";
 import { FaUserCircle, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import { useSelector } from "react-redux";
 import * as usersClient from "./client";
-import PeopleDetails from "./Details";
 import { Link } from "react-router-dom";
-
 
 interface User {
   _id: string;
@@ -36,7 +37,7 @@ export default function PeopleTable({ users = [] }: { users?: any[] }) {
     totalActivity: "",
   });
 
-  const isFaculty = currentUser?.role === "FACULTY";
+  const isFaculty = currentUser?.role === "FACULTY" || currentUser?.role === "ADMIN";
 
   const handleCreateUser = () => {
     setEditingUser(null);
@@ -64,7 +65,7 @@ export default function PeopleTable({ users = [] }: { users?: any[] }) {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await usersClient.deleteUser(userId);
-        // Optionally parent should refresh users prop
+        window.location.reload(); // Simple refresh
       } catch (error) {
         console.error("Failed to delete user:", error);
       }
@@ -72,23 +73,21 @@ export default function PeopleTable({ users = [] }: { users?: any[] }) {
   };
 
   const handleSaveUser = async () => {
-    try {
-      if (editingUser) {
-        await usersClient.updateUser(editingUser._id, formData);
-      } else {
-        await usersClient.createUser(formData);
-      }
-      setShowModal(false);
-      // Optionally parent should refresh users prop
-    } catch (error) {
-      console.error("Failed to save user:", error);
+  try {
+    if (editingUser) {
+      await usersClient.updateUser(editingUser._id, formData);
+    } else {
+      await usersClient.createUser(formData);
     }
-  };
+    setShowModal(false);
+    // Optionally parent should refresh users prop
+  } catch (error) {
+    console.error("Failed to save user:", error);
+  }
+};
 
   return (
     <div id="wd-people-table">
-        <PeopleDetails />
-
       {isFaculty && (
         <div className="mb-3">
           <Button variant="primary" onClick={handleCreateUser}>
@@ -115,17 +114,16 @@ export default function PeopleTable({ users = [] }: { users?: any[] }) {
             <tr key={user._id}>
               <td className="wd-full-name text-nowrap">
                 <Link to={`/Kambaz/Account/Users/${user._id}`} className="text-decoration-none">
-
-                <FaUserCircle className="me-2 fs-1 text-secondary" />
-                <span className="wd-first-name">{user.firstName}</span>{" "}
-                <span className="wd-last-name">{user.lastName}</span>
-                 </Link>
+                  <FaUserCircle className="me-2 fs-1 text-secondary" />
+                  <span className="wd-first-name">{user.firstName}</span>{" "}
+                  <span className="wd-last-name">{user.lastName}</span>
+                </Link>
               </td>
-              <td className="wd-login-id">{user.loginId}</td>
-              <td className="wd-section">{user.section}</td>
+              <td className="wd-login-id">{user.loginId || user.username}</td>
+              <td className="wd-section">{user.section || "001"}</td>
               <td className="wd-role">{user.role}</td>
-              <td className="wd-last-activity">{user.lastActivity}</td>
-              <td className="wd-total-activity">{user.totalActivity}</td>
+              <td className="wd-last-activity">{user.lastActivity || "2024-10-01"}</td>
+              <td className="wd-total-activity">{user.totalActivity || "--"}</td>
               {isFaculty && (
                 <td>
                   <Button

@@ -19,20 +19,34 @@ export default function Kambaz() {
     _id: "1234", name: "New Course", number: "New Number",
     startDate: "2023-09-10", endDate: "2023-12-15", description: "New Description",
   });
-  const [showAllCourses, setShowAllCourses] = useState(false);
+  const [enrolling, setEnrolling] = useState<boolean>(false);
 
   const { currentUser } = useSelector((state: any) => state.accountReducer);
   const dispatch = useDispatch();
   
+  const findCoursesForUser = async () => {
+    try {
+      const courses = await userClient.findCoursesForUser(currentUser._id);
+      setCourses(courses);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const fetchCourses = async () => {
     try {
-      if (showAllCourses) {
-        const allCourses = await courseClient.fetchAllCourses();
-        setCourses(allCourses);
-      } else {
-        const enrolledCourses = await userClient.findMyCourses();
-        setCourses(enrolledCourses);
-      }
+      const allCourses = await courseClient.fetchAllCourses();
+      const enrolledCourses = await userClient.findCoursesForUser(
+        currentUser._id
+      );
+      const courses = allCourses.map((course: any) => {
+        if (enrolledCourses.find((c: any) => c._id === course._id)) {
+          return { ...course, enrolled: true };
+        } else {
+          return course;
+        }
+      });
+      setCourses(courses);
     } catch (error) {
       console.error(error);
     }
@@ -49,16 +63,38 @@ export default function Kambaz() {
     }
   };
 
+  const updateEnrollment = async (courseId: string, enrolled: boolean) => {
+   if (enrolled) {
+     await userClient.enrollIntoCourse(currentUser._id, courseId);
+   } else {
+     await userClient.unenrollFromCourse(currentUser._id, courseId);
+   }
+   setCourses(
+     courses.map((course) => {
+       if (course._id === courseId) {
+         return { ...course, enrolled: enrolled };
+       } else {
+         return course;
+       }
+     })
+   );
+ };
+
+
   useEffect(() => {
-    fetchCourses();
-  }, [currentUser, showAllCourses]);
+    if (enrolling) {
+      fetchCourses();
+    } else {
+      findCoursesForUser();
+    }
+  }, [currentUser, enrolling]);
 
   useEffect(() => {
     fetchEnrollments();
   }, [currentUser]);
 
   const deleteCourse = async (courseId: string) => {
-    // const status = await courseClient.deleteCourse(courseId);
+    await courseClient.deleteCourse(courseId);
     setCourses(courses.filter((course) => course._id !== courseId));
   };
 
@@ -73,10 +109,6 @@ export default function Kambaz() {
       if (c._id === course._id) { return course; }
       else { return c; }
     }));
-  };
-
-  const toggleShowAllCourses = () => {
-    setShowAllCourses(!showAllCourses);
   };
 
   return (
@@ -96,8 +128,9 @@ export default function Kambaz() {
                   addNewCourse={addNewCourse}
                   deleteCourse={deleteCourse}
                   updateCourse={updateCourse}
-                  showAllCourses={showAllCourses}
-                  toggleShowAllCourses={toggleShowAllCourses}
+                  enrolling={enrolling}
+                  setEnrolling={setEnrolling}
+                  updateEnrollment={updateEnrollment}
                 />
               </ProtectedRoute>
             } />

@@ -8,10 +8,9 @@ const modulesSlice = createSlice({
   name: "modules",
   initialState,
   reducers: {
-    setModules: (state, action) => {
-      state.modules = action.payload;
-    },
-
+    setModules: (state, { payload: modules }) => {
+     state.modules = modules;
+   },
 
     addModule: (state, { payload: module }) => {
       const newModule: any = {
@@ -36,6 +35,7 @@ const modulesSlice = createSlice({
         m._id === moduleId ? { ...m, editing: true } : m
       ) as any;
     },
+
   },
 });
 export const { addModule, deleteModule, updateModule, editModule, setModules } =
