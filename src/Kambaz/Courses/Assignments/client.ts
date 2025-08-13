@@ -24,7 +24,7 @@ export const createAssignment = async (courseId: string, assignment: any) => {
   const response = await axiosWithCredentials.post(`${COURSES_API}/${courseId}/assignments`, assignment);
   return response.data;
 };
-
+// comment
 // Update an existing assignment
 export const updateAssignment = async (assignment: any) => {
   const response = await axiosWithCredentials.put(`${ASSIGNMENTS_API}/${assignment._id}`, assignment);
